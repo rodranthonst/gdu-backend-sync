@@ -1,0 +1,36 @@
+{
+  "name": "gestor-unidades-backend-sync",
+  "version": "1.0.0",
+  "description": "Backend de sincronización para unidades compartidas de Google Drive",
+  "main": "sync-service.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "nodemon server.js",
+    "sync:once": "node server.js --once",
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "deploy": "gcloud builds submit --tag gcr.io/skilful-courage-469819-q9/gestor-unidades-backend-sync",
+    "deploy:run": "gcloud run deploy gestor-unidades-backend-sync --image gcr.io/skilful-courage-469819-q9/gestor-unidades-backend-sync --platform managed --region us-central1 --allow-unauthenticated",
+    "deploy:full": "npm run deploy && npm run deploy:run",
+    "gcp:setup": "gcloud services enable cloudbuild.googleapis.com run.googleapis.com containerregistry.googleapis.com firestore.googleapis.com"
+  },
+  "keywords": [
+    "google-drive",
+    "shared-folders",
+    "sync",
+    "backend",
+    "nodejs"
+  ],
+  "author": "Anthony",
+  "license": "MIT",
+  "dependencies": {
+    "@google-cloud/firestore": "^7.11.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "googleapis": "^128.0.0",
+    "node-cron": "^3.0.3",
+    "uuid": "^13.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.1"
+  }
+}
