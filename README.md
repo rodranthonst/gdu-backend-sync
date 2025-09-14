@@ -287,6 +287,38 @@ export NODE_ENV=production
 export LOG_LEVEL=warn
 ```
 
+### 🕐 Cloud Scheduler (GCP)
+
+Para despliegues en Google Cloud Platform, se recomienda usar **Cloud Scheduler** en lugar del cron interno:
+
+#### Configuración Automática
+```bash
+# Linux/Mac
+./setup-cloud-scheduler.sh
+
+# Windows
+.\setup-cloud-scheduler.ps1 -BackendUrl "https://tu-backend.run.app"
+```
+
+#### Configuración Manual
+```bash
+# Crear job de Cloud Scheduler
+gcloud scheduler jobs create http gdu-sync-job \
+  --location=us-central1 \
+  --schedule="0 */2 * * *" \
+  --uri="https://tu-backend.run.app/sync/manual" \
+  --http-method=POST
+```
+
+#### Variables de Entorno para Cloud Scheduler
+```env
+# Deshabilitar cron interno
+AUTO_SYNC_ENABLED=false
+USE_CLOUD_SCHEDULER=true
+```
+
+📖 **Documentación completa**: Ver `CLOUD_SCHEDULER_SETUP.md`
+
 ## 🤝 Uso Independiente
 
 Este backend puede usarse completamente independiente del frontend incluido:

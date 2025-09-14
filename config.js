@@ -41,7 +41,10 @@ const SYNC = {
   BATCH_SIZE: parseInt(process.env.SYNC_BATCH_SIZE) || 100,
   
   // Habilitar sincronización automática
-  AUTO_SYNC_ENABLED: process.env.AUTO_SYNC_ENABLED !== 'false'
+  AUTO_SYNC_ENABLED: process.env.AUTO_SYNC_ENABLED !== 'false',
+  
+  // Usar Cloud Scheduler en lugar de cron interno
+  USE_CLOUD_SCHEDULER: process.env.USE_CLOUD_SCHEDULER === 'true'
 };
 
 // Configuración de impersonación

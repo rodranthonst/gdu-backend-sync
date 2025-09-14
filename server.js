@@ -27,7 +27,16 @@ app.use((req, res, next) => {
 app.get('/health', async (req, res) => {
     try {
         const healthStatus = await syncService.healthCheck();
-        res.status(healthStatus.success ? 200 : 503).json(healthStatus);
+        const enhancedStatus = {
+            ...healthStatus,
+            sync: {
+                ...healthStatus.sync,
+                autoSyncEnabled: SYNC.AUTO_SYNC_ENABLED,
+                useCloudScheduler: SYNC.USE_CLOUD_SCHEDULER,
+                cronJobActive: cronJob !== null
+            }
+        };
+        res.status(healthStatus.success ? 200 : 503).json(enhancedStatus);
     } catch (error) {
         UTILS.log('error', 'Error en health check', null, error);
         res.status(503).json({
@@ -292,8 +301,13 @@ app.use('*', (req, res) => {
 let cronJob = null;
 
 function setupCronJob() {
-    if (!SYNC.ENABLED) {
+    if (!SYNC.AUTO_SYNC_ENABLED) {
         UTILS.log('info', 'Sincronización automática deshabilitada');
+        return;
+    }
+    
+    if (SYNC.USE_CLOUD_SCHEDULER) {
+        UTILS.log('info', 'Usando Cloud Scheduler - cron interno deshabilitado');
         return;
     }
 
