@@ -48,22 +48,106 @@ app.get('/health', async (req, res) => {
 
 // Estado básico del servidor
 app.get('/', (req, res) => {
-    res.json({
-        service: 'Gestor de Unidades - Backend Sync',
-        version: '1.0.0',
-        status: 'running',
-        timestamp: new Date().toISOString(),
-        endpoints: {
-            health: '/health',
-            sync: {
-                status: '/sync/status',
-                full: '/sync/full',
-                incremental: '/sync/incremental',
-                manual: '/sync/manual'
-            },
-            maintenance: '/maintenance'
-        }
-    });
+    const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <title>Gestor de Unidades - Backend Sync</title>
+        <meta charset="UTF-8">
+        <style>
+            body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+            .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 800px; }
+            .header { color: #333; border-bottom: 2px solid #007bff; padding-bottom: 15px; margin-bottom: 25px; }
+            .section { margin: 20px 0; }
+            .endpoint { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 10px 0; border-left: 4px solid #007bff; }
+            .method { font-weight: bold; color: #007bff; }
+            .url { font-family: monospace; background: #e9ecef; padding: 2px 6px; border-radius: 3px; }
+            .sync-button { 
+                display: inline-block; 
+                background: #28a745; 
+                color: white; 
+                padding: 12px 24px; 
+                text-decoration: none; 
+                border-radius: 5px; 
+                font-weight: bold;
+                margin: 10px 10px 10px 0;
+            }
+            .sync-button:hover { background: #218838; color: white; text-decoration: none; }
+            .status { color: #28a745; font-weight: bold; }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🔄 Gestor de Unidades - Backend Sync</h1>
+                <p><strong>Versión:</strong> 1.0.0 | <strong>Estado:</strong> <span class="status">Funcionando</span></p>
+                <p><strong>Timestamp:</strong> ${new Date().toISOString()}</p>
+            </div>
+
+            <div class="section">
+                <h2>🚀 Sincronización Rápida</h2>
+                <p>Haz clic para sincronizar las unidades compartidas:</p>
+                <a href="/sync/run" class="sync-button">🔄 Sincronizar Ahora</a>
+                <a href="/sync/status" class="sync-button" style="background: #17a2b8;">📊 Ver Estado</a>
+            </div>
+
+            <div class="section">
+                <h2>📡 Endpoints Disponibles</h2>
+                
+                <h3>🔄 Sincronización</h3>
+                <div class="endpoint">
+                    <span class="method">GET</span> <span class="url">/sync/run</span><br>
+                    <small>Ejecutar sincronización completa (fácil para navegador)</small>
+                </div>
+                <div class="endpoint">
+                    <span class="method">GET</span> <span class="url">/sync/status</span><br>
+                    <small>Obtener estado actual de sincronización</small>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> <span class="url">/sync/full</span><br>
+                    <small>Ejecutar sincronización completa (API)</small>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> <span class="url">/sync/incremental</span><br>
+                    <small>Ejecutar sincronización incremental (API)</small>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> <span class="url">/sync/manual</span><br>
+                    <small>Ejecutar sincronización manual (API)</small>
+                </div>
+
+                <h3>🏥 Salud y Mantenimiento</h3>
+                <div class="endpoint">
+                    <span class="method">GET</span> <span class="url">/health</span><br>
+                    <small>Verificar estado de salud del sistema</small>
+                </div>
+                <div class="endpoint">
+                    <span class="method">POST</span> <span class="url">/maintenance</span><br>
+                    <small>Ejecutar tareas de mantenimiento</small>
+                </div>
+
+                <h3>🧪 Pruebas</h3>
+                <div class="endpoint">
+                    <span class="method">GET</span> <span class="url">/test/drives</span><br>
+                    <small>Probar conexión con Google Drive</small>
+                </div>
+            </div>
+
+            <div class="section">
+                <h2>☁️ Automatización GCP</h2>
+                <p>Este backend está preparado para automatización con Google Cloud Platform:</p>
+                <ul>
+                    <li>✅ Cloud Scheduler configurado</li>
+                    <li>✅ Service Account con impersonación</li>
+                    <li>✅ Firestore como base de datos</li>
+                    <li>✅ Logs estructurados</li>
+                </ul>
+            </div>
+        </div>
+    </body>
+    </html>`;
+    
+    res.send(html);
 });
 
 // === RUTAS DE SINCRONIZACIÓN ===
@@ -147,6 +231,86 @@ app.post('/sync/manual', async (req, res) => {
             success: false,
             error: error.message
         });
+    }
+});
+
+// === ENDPOINTS GET PARA NAVEGADOR ===
+
+// Ejecutar sincronización completa vía GET (fácil para navegador)
+app.get('/sync/run', async (req, res) => {
+    try {
+        UTILS.log('info', 'Sincronización completa solicitada vía GET (navegador)');
+        
+        const result = await syncService.performSync();
+        
+        // Respuesta HTML amigable para el navegador
+        const html = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Sincronización - Gestor de Unidades</title>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; }
+                .success { color: #28a745; }
+                .error { color: #dc3545; }
+                .stats { background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 15px 0; }
+                .stat-item { margin: 5px 0; }
+                .back-link { display: inline-block; margin-top: 20px; color: #007bff; text-decoration: none; }
+                .back-link:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>🔄 Sincronización de Unidades</h1>
+                ${result.success ? 
+                    `<p class="success">✅ <strong>Sincronización completada exitosamente</strong></p>
+                     <div class="stats">
+                         <h3>📊 Estadísticas:</h3>
+                         <div class="stat-item">📁 <strong>Unidades:</strong> ${result.stats?.drives_count || 0}</div>
+                         <div class="stat-item">📂 <strong>Carpetas:</strong> ${result.stats?.folders_count || 0}</div>
+                         <div class="stat-item">👥 <strong>Gestores:</strong> ${result.stats?.managers_count || 0}</div>
+                         <div class="stat-item">⏱️ <strong>Duración:</strong> ${result.stats?.duration_minutes || 0} minutos</div>
+                         <div class="stat-item">🆔 <strong>ID Sync:</strong> ${result.sync_id || 'N/A'}</div>
+                     </div>` :
+                    `<p class="error">❌ <strong>Error en la sincronización:</strong> ${result.error || 'Error desconocido'}</p>`
+                }
+                <a href="/" class="back-link">← Volver al inicio</a>
+                <a href="/sync/run" class="back-link" style="margin-left: 20px;">🔄 Sincronizar de nuevo</a>
+            </div>
+        </body>
+        </html>`;
+        
+        res.send(html);
+    } catch (error) {
+        UTILS.log('error', 'Error en sincronización completa vía GET', null, error);
+        
+        const errorHtml = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Error - Gestor de Unidades</title>
+            <meta charset="UTF-8">
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; background: #f5f5f5; }
+                .container { background: white; padding: 30px; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); max-width: 600px; }
+                .error { color: #dc3545; }
+                .back-link { display: inline-block; margin-top: 20px; color: #007bff; text-decoration: none; }
+                .back-link:hover { text-decoration: underline; }
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <h1>❌ Error en Sincronización</h1>
+                <p class="error"><strong>Error:</strong> ${error.message}</p>
+                <a href="/" class="back-link">← Volver al inicio</a>
+                <a href="/sync/run" class="back-link" style="margin-left: 20px;">🔄 Intentar de nuevo</a>
+            </div>
+        </body>
+        </html>`;
+        
+        res.status(500).send(errorHtml);
     }
 });
 
@@ -288,7 +452,7 @@ app.use((error, req, res, next) => {
 });
 
 // Ruta no encontrada
-app.use('*', (req, res) => {
+app.use((req, res) => {
     res.status(404).json({
         success: false,
         error: 'Endpoint no encontrado',

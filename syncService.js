@@ -140,7 +140,8 @@ class SyncService {
             UTILS.log('info', 'Sincronizando datos a Firestore');
 
             // 1. Sincronizar unidades compartidas
-            await firestoreService.syncSharedDrives(drives);
+            const syncResult = await firestoreService.syncSharedDrives(drives);
+            UTILS.log('info', `Resultado sincronización: ${syncResult.processed} procesadas, ${syncResult.deleted} eliminadas`);
             
             // 2. Sincronizar carpetas y managers por unidad
             for (let i = 0; i < drives.length; i++) {

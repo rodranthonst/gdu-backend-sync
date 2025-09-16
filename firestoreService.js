@@ -69,10 +69,53 @@ class FirestoreSyncService {
             this.ensureInitialized();
             UTILS.log('info', `Sincronizando ${drivesFromAPI.length} unidades compartidas`);
 
+            // 1. Obtener todas las unidades existentes en Firestore
+            const existingDrivesSnapshot = await this.db.collection(COLLECTIONS.SHARED_DRIVES).get();
+            const existingDriveIds = new Set();
+            const existingDrives = {};
+            
+            existingDrivesSnapshot.forEach(doc => {
+                const data = doc.data();
+                existingDriveIds.add(doc.id);
+                existingDrives[doc.id] = data;
+            });
+
+            // 2. Crear conjunto de IDs de unidades actuales desde Google Drive
+            const currentDriveIds = new Set(drivesFromAPI.map(drive => drive.id));
+
+            // 3. Identificar unidades a eliminar (existen en Firestore pero no en Drive)
+            // Google Drive es la fuente única de verdad - eliminar TODO lo que no esté en Drive
+            const drivesToDelete = [];
+            existingDriveIds.forEach(driveId => {
+                if (!currentDriveIds.has(driveId)) {
+                    drivesToDelete.push(driveId);
+                }
+            });
+
+            UTILS.log('info', `Unidades a eliminar: ${drivesToDelete.length}`);
+            if (drivesToDelete.length > 0) {
+                UTILS.log('debug', `IDs a eliminar: ${drivesToDelete.join(', ')}`);
+            }
+
             const batch = this.db.batch();
             let batchCount = 0;
             const batchSize = 500; // Límite de Firestore
 
+            // 4. Eliminar unidades obsoletas
+            for (const driveId of drivesToDelete) {
+                const driveRef = this.db.collection(COLLECTIONS.SHARED_DRIVES).doc(driveId);
+                batch.delete(driveRef);
+                batchCount++;
+
+                // Ejecutar batch si alcanza el límite
+                if (batchCount >= batchSize) {
+                    await batch.commit();
+                    UTILS.log('debug', `Batch de eliminación de ${batchCount} unidades procesado`);
+                    batchCount = 0;
+                }
+            }
+
+            // 5. Actualizar/crear unidades actuales
             for (const drive of drivesFromAPI) {
                 const driveRef = this.db.collection(COLLECTIONS.SHARED_DRIVES).doc(drive.id);
                 
@@ -92,9 +135,8 @@ class FirestoreSyncService {
                 };
 
                 // Verificar si existe para preservar campos del frontend
-                const existingDoc = await driveRef.get();
-                if (existingDoc.exists) {
-                    const existingData = existingDoc.data();
+                if (existingDrives[drive.id]) {
+                    const existingData = existingDrives[drive.id];
                     // Preservar campos creados por el frontend
                     if (existingData.created_by_frontend) {
                         driveData.created_by_frontend = true;
@@ -119,8 +161,15 @@ class FirestoreSyncService {
                 UTILS.log('debug', `Batch final de ${batchCount} unidades procesado`);
             }
 
-            UTILS.log('info', `${drivesFromAPI.length} unidades compartidas sincronizadas exitosamente`);
-            return drivesFromAPI.length;
+            const totalProcessed = drivesFromAPI.length;
+            const totalDeleted = drivesToDelete.length;
+            UTILS.log('info', `Sincronización completa: ${totalProcessed} unidades actualizadas/creadas, ${totalDeleted} eliminadas`);
+            
+            return {
+                processed: totalProcessed,
+                deleted: totalDeleted,
+                total: totalProcessed
+            };
 
         } catch (error) {
             UTILS.log('error', 'Error al sincronizar unidades compartidas', null, error);

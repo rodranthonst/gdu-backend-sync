@@ -26,6 +26,7 @@
     "@google-cloud/firestore": "^7.11.3",
     "cors": "^2.8.5",
     "dotenv": "^16.6.1",
+    "express": "^5.1.0",
     "googleapis": "^128.0.0",
     "node-cron": "^3.0.3",
     "uuid": "^13.0.0"
